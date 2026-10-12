@@ -1,4 +1,5 @@
-# Stage 1: Dependencies
+Stage 1: Dependencies
+
 FROM node:20-alpine AS deps
 
 RUN apk add --no-cache libc6-compat
@@ -7,7 +8,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Stage 2: Build
+Stage 2: Build
+
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -20,7 +22,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN npm run build
 
-# Stage 3: Production
+Stage 3: Production
+
 FROM node:20-alpine AS runner
 
 WORKDIR /app
@@ -48,4 +51,4 @@ USER nextjs
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "./node_modules/.bin/prisma db push && node server.js"]
+CMD ["sh", "-c", "npx prisma db push && node server.js"]
