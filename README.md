@@ -360,3 +360,14 @@ MIT License - feel free to use this project for your own purposes.
 ## Support
 
 For issues and questions, please open an issue on GitHub.
+
+## Render: reset / create the admin login
+
+The admin account is created by the Prisma seed script; setting `ADMIN_EMAIL` and `ADMIN_PASSWORD` in Render alone does not create or reset the database user.
+
+1. In Render, open the web service and add `DATABASE_URL`, `JWT_SECRET` (at least 32 characters), `ADMIN_EMAIL` and `ADMIN_PASSWORD` under **Environment**. Use your actual PostgreSQL Internal Database URL when the database is in the same Render region.
+2. Deploy the latest code.
+3. Open the Render service Shell (if available) and run `npm run db:generate`, then `npm run db:seed`. If the Shell is unavailable, run the seed as a one-off job using the same repo and environment variables.
+4. Open `/admin` and sign in with the exact `ADMIN_EMAIL` and `ADMIN_PASSWORD` values set in Render.
+
+The seed now updates the existing admin user's password hash and ADMIN role when run again. Do not expose these credentials in public repositories or screenshots. Never put secrets in client-side `NEXT_PUBLIC_` variables.
