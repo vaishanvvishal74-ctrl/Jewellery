@@ -51,4 +51,4 @@ USER nextjs
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "npx prisma db push && node server.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma db push && node server.js"]
