@@ -1,26 +1,38 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Function to generate random password
-function generateRandomPassword(length: number = 16): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
-  const values = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(values)
-    .map((val) => charset[val % charset.length])
+function generateRandomPassword(length = 16): string {
+  const charset =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
+  const bytes = randomBytes(length);
+
+  return Array.from(bytes)
+    .map((value) => charset[value % charset.length])
     .join('');
 }
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('Starting database seed...');
 
-  // Create admin user
-  const adminPassword = process.env.ADMIN_PASSWORD || generateRandomPassword(20);
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    throw new Error(
+      'ADMIN_PASSWORD is required. Set it in Render Environment.'
+    );
+  }
+
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@jewellery.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+      role: 'ADMIN',
+    },
     create: {
       email: 'admin@jewellery.com',
       name: 'Admin User',
@@ -30,35 +42,33 @@ async function main() {
     },
   });
 
-  console.log('✅ Admin user created:', admin.email);
-  if (!process.env.ADMIN_PASSWORD) {
-    console.log('⚠️  IMPORTANT: Admin password generated, save this:', adminPassword);
-    console.log('   Password:', adminPassword);
-  }
+  console.log('Admin account ready:', admin.email);
 
-  // Create test user (only in development)
   if (process.env.NODE_ENV === 'development') {
-    const testUserPassword = process.env.TEST_USER_PASSWORD || generateRandomPassword(12);
-    const userPassword = await bcrypt.hash(testUserPassword, 10);
+    const testUserPassword =
+      process.env.TEST_USER_PASSWORD || generateRandomPassword(12);
+
+    const hashedTestPassword = await bcrypt.hash(testUserPassword, 10);
+
     const user = await prisma.user.upsert({
       where: { email: 'user@example.com' },
       update: {},
       create: {
         email: 'user@example.com',
         name: 'Test User',
-        password: userPassword,
+        password: hashedTestPassword,
         phone: '+919876543211',
         role: 'USER',
       },
     });
 
-    console.log('✅ Test user created:', user.email);
+    console.log('Test user ready:', user.email);
+
     if (!process.env.TEST_USER_PASSWORD) {
-      console.log('⚠️  Test user password:', testUserPassword);
+      console.log('Generated test-user password:', testUserPassword);
     }
   }
 
-  // Create sample products
   const products = [
     {
       name: 'Beaumont Summit',
@@ -470,16 +480,17 @@ async function main() {
       update: product,
       create: product,
     });
-    console.log(`✅ Product created: ${created.name}`);
+
+    console.log(`Product ready: ${created.name}`);
   }
 
-  console.log('🎉 Database seeded successfully!');
+  console.log('Database seeded successfully!');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Error seeding database:', e);
-    process.exit(1);
+  .catch((error) => {
+    console.error('Database seed failed:', error);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
