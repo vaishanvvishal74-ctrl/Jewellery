@@ -8,7 +8,15 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD;
 
   if (!password) {
-    throw new Error('ADMIN_PASSWORD environment variable is missing');
+    throw new Error(
+      'ADMIN_PASSWORD environment variable is required'
+    );
+  }
+
+  if (password.length < 12) {
+    throw new Error(
+      'ADMIN_PASSWORD must be at least 12 characters long'
+    );
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,7 +33,7 @@ async function main() {
 
   if (result.count !== 1) {
     throw new Error(
-      `Expected exactly one admin account; updated ${result.count}`
+      `Expected exactly one existing admin account; updated ${result.count}. No account was created.`
     );
   }
 
