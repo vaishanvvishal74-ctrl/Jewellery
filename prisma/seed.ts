@@ -16,19 +16,45 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   // Create admin user
-  const adminPassword = process.env.ADMIN_PASSWORD || generateRandomPassword(20);
-  const hashedPassword = await bcrypt.hash(adminPassword, 10);
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@jewellery.com' },
-    update: {},
-    create: {
-      email: 'admin@jewellery.com',
-      name: 'Admin User',
-      password: hashedPassword,
-      phone: '+919876543210',
-      role: 'ADMIN',
-    },
-  });
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+if (!adminPassword) {
+  throw new Error(
+    'ADMIN_PASSWORD environment variable is required.'
+  );
+}
+
+const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+// Create admin user
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+if (!adminPassword) {
+  throw new Error(
+    'ADMIN_PASSWORD environment variable is required.'
+  );
+}
+
+const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+const admin = await prisma.user.upsert({
+  where: { email: 'admin@jewellery.com' },
+  update: {
+    password: hashedPassword,
+    role: 'ADMIN',
+  },
+  create: {
+    email: 'admin@jewellery.com',
+    name: 'Admin User',
+    password: hashedPassword,
+    phone: '+919876543210',
+    role: 'ADMIN',
+  },
+});
+
+console.log('Admin account prepared:', admin.email);
+
+console.log('Admin account prepared:', admin.email);
 
   console.log('✅ Admin user created:', admin.email);
   if (!process.env.ADMIN_PASSWORD) {
